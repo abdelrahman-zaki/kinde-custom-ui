@@ -2,7 +2,7 @@
 
 import React from "react";
 import { renderToString } from "react-dom/server.browser";
-import { getKindeWidget } from "@kinde/infrastructure";
+import { getKindeWidget, getKindeNonce } from "@kinde/infrastructure";
 
 import { EntryPageHeader } from "../../components/EntryPageHeader";
 import { NavTabs } from "../../components/NavTabs";
@@ -11,6 +11,13 @@ import { Layout } from "../../components/Layout";
 const PageLayout = async ({ request, context }) => {
   return (
     <Layout request={request} context={context}>
+      <style nonce={getKindeNonce()}>
+        {`
+          :root {
+            --kinde-button-primary-background-color: red;
+          }
+        `}
+      </style>
       <main>
         <div className="c-widget">
           <EntryPageHeader logoAltText={context.widget.content.logoAlt} />
