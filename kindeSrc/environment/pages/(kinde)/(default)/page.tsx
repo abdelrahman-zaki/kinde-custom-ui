@@ -31,7 +31,7 @@ const PageLayout = async ({ request, context }) => {
           </header>
           <h2>{context.widget.content.heading}</h2>
           <p className="c-strapline">{context.widget.content.description} </p>
-          <div>{getKindeWidget()}</div>
+          <div className="tesssssstttt">{getKindeWidget()}</div>
         </div>
       </main>
     </Layout>
