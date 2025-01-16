@@ -13,8 +13,8 @@ const PageLayout = async ({ request, context }) => {
     <Layout request={request} context={context}>
       <style nonce={getKindeNonce()}>
         {`
-          :root {
-            --kinde-button-primary-background-color: red;
+          .kinde-button {
+            --kinde-button-primary-background-color: red !important;
           }
         `}
       </style>
