@@ -12,6 +12,7 @@ const PageLayout = async ({ request, context }) => {
   return (
     <Layout request={request} context={context}>
       <main>
+        <span>Heyyy</span>
         <div className="c-widget">
           <EntryPageHeader logoAltText={context.widget.content.logoAlt} />
           <NavTabs activeTab="login" />
