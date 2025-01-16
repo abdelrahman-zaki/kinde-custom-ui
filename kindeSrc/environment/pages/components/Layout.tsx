@@ -30,14 +30,14 @@ export const Layout = ({ request, context, children }) => {
           {`
             :root {
               ${setKindeDesignerCustomProperties({
-                baseBackgroundColor: "#010101",
-                baseLinkColor: "#ff1493",
-                buttonBorderRadius: "2em",
-                primaryButtonBackgroundColor: "#ff1493",
-                primaryButtonColor: "#010101",
-                inputBorderRadius: "0px",
-                cardBorderRadius: "0px",
-              })}
+            baseBackgroundColor: "#010101",
+            baseLinkColor: "#ff1493",
+            buttonBorderRadius: "2em",
+            primaryButtonBackgroundColor: "#ff1493",
+            primaryButtonColor: "#010101",
+            inputBorderRadius: "0px",
+            cardBorderRadius: "0px",
+          })}
             }
 
             :root {
@@ -96,6 +96,7 @@ export const Layout = ({ request, context, children }) => {
         </style>
       </head>
       <body>
+        <span>default</span>
         <div id="root" data-roast-root="/admin" className="c-container">
           {children}
           <footer className="c-footer">
