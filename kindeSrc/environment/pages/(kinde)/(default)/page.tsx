@@ -20,7 +20,6 @@ const PageLayout = async ({ request, context }) => {
         `}
       </style>
       <main>
-        <span>Heyyy</span>
         <div className="c-widget">
           <header>
             <img
