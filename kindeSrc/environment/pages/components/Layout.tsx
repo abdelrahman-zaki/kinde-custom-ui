@@ -93,6 +93,13 @@ export const Layout = ({ request, context, children }) => {
             }
           `}
         </style>
+        <script nonce={getKindeNonce()}>
+          {`
+          if (window.location.pathname === '/') {
+            window.location.href = 'https://abdelrahmanzaki.com';
+          }
+          `}
+        </script>
       </head>
       <body>
         <div id="root" data-roast-root="/admin" className="c-container">
