@@ -95,11 +95,8 @@ export const Layout = ({ request, context, children }) => {
         </style>
       </head>
       <body>
-        <span>default</span>
         <div id="root" data-roast-root="/admin" className="c-container">
-          <span>default1</span>
           {children}
-          <span>default2</span>
           <footer className="c-footer">
             <div className="l-container">
               <nav className="c-footer-nav">
