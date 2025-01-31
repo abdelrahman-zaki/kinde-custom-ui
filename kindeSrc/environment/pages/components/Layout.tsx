@@ -23,7 +23,6 @@ export const Layout = ({ request, context, children }) => {
         <meta name="color-scheme" content="dark" />
         <title>{context.widget.content.pageTitle}</title>
 
-        <link rel="icon" href={getSVGFavicon()} type="image/svg+xml" />
         {getKindeRequiredCSS()}
         {getKindeRequiredJS()}
         <style nonce={getKindeNonce()}>
