@@ -42,8 +42,15 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
 
     // The user has been added to the Kinde user pool for the first time
     if (isNewKindeUser) {
-        console.log("event: ", event);
-        console.log("event.context: ", event.context);
-        console.log("event.request: ", event.request);
+        const kindeAPI = await createKindeAPI(event);
+
+        const userId = event.context.user.id;
+
+        const { data } = await kindeAPI.patch({
+            endpoint: `user?id=${userId}`,
+            params: {
+                picture: "https://lh3.googleusercontent.com/a/ACg8ocL3rppOaNZe2cY98QfjbZnV9vptwTtpF6hihIcIMe-1lVEZTUaX=s96-c",
+            },
+        });
     }
 }
