@@ -49,7 +49,7 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
         const { data } = await kindeAPI.patch({
             endpoint: `user?id=${userId}`,
             params: {
-                picture: "https://lh3.googleusercontent.com/a/ACg8ocL3rppOaNZe2cY98QfjbZnV9vptwTtpF6hihIcIMe-1lVEZTUaX=s96-c",
+                picture: "https://account.microsoft.com/favicon.ico",
             },
         });
     }
