@@ -43,5 +43,6 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     // The user has been added to the Kinde user pool for the first time
     if (isNewKindeUser) {
         console.log("event.context.auth: ", event.context.auth);
+        console.log("event.request: ", event.request);
     }
 }
