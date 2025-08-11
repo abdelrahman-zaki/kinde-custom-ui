@@ -17,6 +17,9 @@ const PageLayout = async ({ request, context }) => {
           .c-strapline {
             margin-bottom: 1.5rem;
           }
+          .kinde-fallback-action {
+            display: none;
+          }
         `}
       </style>
       <main>
