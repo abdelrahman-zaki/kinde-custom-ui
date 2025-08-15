@@ -9,7 +9,7 @@ import {
 // The settings for this workflow
 export const workflowSettings: WorkflowSettings = {
     id: "postAuthentication",
-    name: "UserPhoneSync",
+    name: "UserSync",
     failurePolicy: {
         action: "stop",
     },
@@ -25,15 +25,15 @@ export const workflowSettings: WorkflowSettings = {
 // You can do this by going to the Kinde dashboard.
 //
 // Create an M2M application with the following scopes enabled:
-// * update:user_properties
+// * read:user_properties
+// * read:users
 //
 // In Settings -> Environment variables set up the following variables with the
-// values from the M2M application you created above and Google Workspace connection ID:
+// values from the M2M application you created above:
 //
 // * KINDE_WF_M2M_CLIENT_ID
 // * KINDE_WF_M2M_CLIENT_SECRET - Ensure this is setup with sensitive flag
 // enabled to prevent accidental sharing
-// * GOOGLE_WORKSPACE_CONNECTION_ID
 
 type SamlValue = { value?: string };
 type SamlAttribute = { name?: string; values?: SamlValue[] };
@@ -41,6 +41,23 @@ type SamlAttributeStatement = { attributes?: SamlAttribute[] };
 
 // The workflow code to be executed when the event is triggered
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
+    const isNewKindeUser = event.context.auth.isNewUserRecordCreated;
+
+    // The user has been added to the Kinde user pool for the first time
+    if (isNewKindeUser) {
+        const kindeAPI = await createKindeAPI(event);
+
+        const userId = event.context.user.id;
+        console.log(event);
+
+        const { data } = await kindeAPI.patch({
+            endpoint: `user?id=${userId}`,
+            params: {
+                picture: "https://account.microsoft.com/favicon.ico",
+            },
+        });
+    }
+
     const connectionId = event.context.auth.connectionId;
     const googleWorkspaceConnectionId = getEnvironmentVariable("GOOGLE_WORKSPACE_CONNECTION_ID")?.value;
     if (connectionId === googleWorkspaceConnectionId) {
