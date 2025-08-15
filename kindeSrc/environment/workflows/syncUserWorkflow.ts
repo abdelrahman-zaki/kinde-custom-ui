@@ -16,7 +16,6 @@ export const workflowSettings: WorkflowSettings = {
     trigger: WorkflowTrigger.PostAuthentication,
     bindings: {
         "kinde.env": {},
-        "kinde.fetch": {},
         url: {},
     },
 };
