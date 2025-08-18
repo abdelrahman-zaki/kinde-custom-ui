@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@kinde/infrastructure": "^0.4.1",
+    "@kinde/infrastructure": "^0.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "eslint": "^9.25.1",
