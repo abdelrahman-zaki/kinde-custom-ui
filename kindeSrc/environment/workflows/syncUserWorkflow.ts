@@ -53,6 +53,7 @@ type SamlAttributeStatement = { attributes?: SamlAttribute[] };
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     const connectionId = event.context.auth.connectionId;
+    console.log(event);
     const googleWorkspaceConnectionId = getEnvironmentVariable("GOOGLE_WORKSPACE_CONNECTION_ID")?.value;
     if (connectionId !== googleWorkspaceConnectionId) return;
 
