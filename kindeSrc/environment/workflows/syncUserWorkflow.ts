@@ -86,6 +86,8 @@ const attributeSyncConfig = [
 ];
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
+    console.log(event);
+
     const connectionId = event.context.auth.connectionId;
     const oktaConnectionId = getEnvironmentVariable("OKTA_CONNECTION_ID")?.value;
     if (!oktaConnectionId || connectionId !== oktaConnectionId) return;
