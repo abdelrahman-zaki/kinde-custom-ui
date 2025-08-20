@@ -76,6 +76,8 @@ type SamlAttribute = { name?: string; values?: SamlValue[] };
 type SamlAttributeStatement = { attributes?: SamlAttribute[] };
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
+    console.log("Test 1");
+
     const connectionId = event.context.auth.connectionId;
     const oktaConnectionId = getEnvironmentVariable("OKTA_CONNECTION_ID")?.value;
     if (!oktaConnectionId || connectionId !== oktaConnectionId) return;
@@ -96,6 +98,8 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     const userTypeAttrNames = ["user_type"];
     const groupsAttrNames = ["groups"];
 
+    console.log("Test 2");
+
     const getFirstString = (a?: SamlAttribute | null) =>
         (a?.values?.[0]?.value ?? "").toString().trim() || null;
 
@@ -110,7 +114,11 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     const groupsArray = getAllStrings(findAttr(groupsAttrNames));
     const groupsValue = groupsArray.length ? groupsArray.join(",") : null;
 
+    console.log("Test 3");
+
     if (!phoneValue && !userTypeValue && !groupsValue) return;
+
+    console.log("Test 4");
 
     const kindeAPI = await createKindeAPI(event);
     const userId = event.context.user.id;
@@ -126,12 +134,8 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
 
     await kindeAPI.patch({
         endpoint: `users/${userId}/properties`,
-        body: {
-            "properties": {
-                "phone_number": "123456789",
-                "user_type": "admin",
-                "groups": "engineering,hr"
-            }
-        },
+        body: { properties },
     });
+
+    console.log("Test 5");
 }
