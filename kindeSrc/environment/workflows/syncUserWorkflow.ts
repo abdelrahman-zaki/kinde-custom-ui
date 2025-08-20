@@ -137,5 +137,6 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
         body: { properties },
     });
 
+    console.log(properties);
     console.log(data);
 }
