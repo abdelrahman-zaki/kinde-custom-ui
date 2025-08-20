@@ -134,7 +134,7 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
 
     const { data } = await kindeAPI.patch({
         endpoint: `users/${userId}/properties`,
-        body: { properties },
+        params: { properties },
     });
 
     console.log(properties);
