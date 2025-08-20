@@ -2,69 +2,40 @@ import {
     onPostAuthenticationEvent,
     WorkflowSettings,
     WorkflowTrigger,
-    getEnvironmentVariable,
     createKindeAPI,
 } from "@kinde/infrastructure";
 
-// This workflow requires you to set up the Kinde Management API,
-// Okta attribute statements for user attributes (mobilePhone and userType),
-// and a group attribute statement for groups.
+// This workflow syncs user attributes and groups from a SAML assertion into Kinde custom user properties.
+// It works with any SAML connection, as long as attributes and groups are exposed in the SAML response.
 //
-// You can do this by going to the Kinde dashboard.
+// Setup steps:
 //
-// Create an M2M application with the following scopes enabled:
-// * update:user_properties
+// 1. In your Identity Provider (IdP), configure SAML attribute statements / group attribute statements
+//    to send the attributes you want to sync.
 //
-// In Settings -> Environment variables set up the following variables with the
-// values from the M2M application you created above and the Okta connection ID:
+// 2. In Kinde, create custom user property keys to store these attributes:
+//    * phone_number
+//    * user_type
+//    * groups
 //
-// * KINDE_WF_M2M_CLIENT_ID
-// * KINDE_WF_M2M_CLIENT_SECRET - Ensure this is setup with sensitive flag
-//   enabled to prevent accidental sharing
-// * OKTA_CONNECTION_ID
+//    Note: Update the `attributeSyncConfig` object in the code below if your IdP uses different names.
 //
-// In your Okta Admin Console, go to:
-// Applications -> (your Kinde SAML app) -> General -> SAML Settings -> Edit -> Attribute Statements / Group Attribute Statements
+// 3. Create an M2M application in Kinde with the following scope enabled:
+//    * update:user_properties
 //
-// Add the following attribute statements:
-// * Name: phone_number   (exact string expected by this workflow; case-insensitive)
-// * Value: user.mobilePhone
-// * Name: user_type      (exact string expected by this workflow; case-insensitive)
-// * Value: user.userType
+//    In Settings -> Environment variables, configure the following (values from your M2M application):
+//    * KINDE_WF_M2M_CLIENT_ID
+//    * KINDE_WF_M2M_CLIENT_SECRET  (mark as sensitive)
 //
-// Add a group attribute statement to include the user’s groups:
-// * Name: groups        (exact string expected by this workflow; case-insensitive)
-// * Filter: Matches regex .*
+// 4. Ensure the properties are included in tokens by toggling OFF the “Private” option in their settings.
+//    Then, in the Application settings in Kinde, add them under **Token customization**.
 //
-// In Kinde, create custom user property keys to store these attributes:
-// * phone_number   (for mobilePhone)
-// * user_type      (for userType)
-// * groups         (for groups)
-//
-// If you use different SAML attribute names or Kinde property keys,
-// update the `attributeSyncConfig` object in the code below.
-//
-// Each object in the array defines a mapping:
-// - `samlName`: The attribute name from the Okta SAML assertion (case-insensitive).
-// - `kindeKey`: The corresponding user property key in Kinde.
-// - `multiValue`: Set to `true` if the attribute can have multiple values (like groups),
-//   which will be joined by a comma.
-//
-// Important: when creating these properties, make sure the **“Private” option is toggled off**
-// so they are included in tokens.
-//
-// To add these properties to tokens:
-// 1. Open the relevant application from the Home screen or go to Settings > Applications.
-// 2. Select **View details**.
-// 3. Select **Tokens**.
-// 4. Scroll to the **Token customization** section.
-// 5. Select **Customize** on the relevant token type (Access token or ID token).
-// 6. In the Customize dialog, select the properties (`phone_number`, `user_type`, `groups`).
-// 7. Select **Save**.
+// Once configured, this workflow will run after authentication, read the attributes from the SAML assertion,
+// and sync them into Kinde so they can be used in tokens or elsewhere.
 
 export const workflowSettings: WorkflowSettings = {
     id: "postAuthentication",
-    name: "OktaAttributesSync",
+    name: "SamlAttributesSync",
     failurePolicy: {
         action: "stop",
     },
@@ -86,11 +57,8 @@ const attributeSyncConfig = [
 ];
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
-    console.log(event);
-
-    const connectionId = event.context.auth.connectionId;
-    const oktaConnectionId = getEnvironmentVariable("OKTA_CONNECTION_ID")?.value;
-    if (!oktaConnectionId || connectionId !== oktaConnectionId) return;
+    const protocol = event.context.auth.provider.protocol;
+    if (!protocol || protocol !== "saml") return;
 
     const attributeStatements =
         event.context.auth.provider?.data?.assertion
