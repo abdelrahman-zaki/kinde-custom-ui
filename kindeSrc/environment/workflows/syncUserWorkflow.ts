@@ -126,6 +126,12 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
 
     await kindeAPI.patch({
         endpoint: `users/${userId}/properties`,
-        body: { properties },
+        body: {
+            "properties": {
+                "phone_number": "123456789",
+                "user_type": "admin",
+                "groups": "engineering,hr"
+            }
+        },
     });
 }
