@@ -132,10 +132,10 @@ export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     if (userTypeValue) properties[userTypePropertyKey] = userTypeValue;
     if (groupsValue) properties[groupsPropertyKey] = groupsValue;
 
-    await kindeAPI.patch({
+    const { data } = await kindeAPI.patch({
         endpoint: `users/${userId}/properties`,
         body: { properties },
     });
 
-    console.log("Test 5");
+    console.log(data);
 }
