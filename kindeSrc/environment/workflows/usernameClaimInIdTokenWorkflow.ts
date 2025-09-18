@@ -46,7 +46,7 @@ export default async function Workflow(event: onUserTokenGeneratedEvent) {
 
     const orgCode = event.context.organization.code;
     const { data: orgDetails } = await kindeAPI.get({
-        endpoint: `organizations/${orgCode}`,
+        endpoint: `organization?code=${orgCode}`,
     });
     const orgName = orgDetails.name;
     console.log("orgName: ", orgName);
