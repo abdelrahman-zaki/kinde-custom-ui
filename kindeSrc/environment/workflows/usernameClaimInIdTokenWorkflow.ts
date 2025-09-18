@@ -26,5 +26,9 @@ export default async function Workflow(event: onUserTokenGeneratedEvent) {
 
     // idToken.username = "";
 
-    console.log(event);
+    const userId = event.context.user.id;
+    console.log("userId: ", userId);
+
+    const orgCode = event.context.organization.code;
+    console.log("orgCode: ", orgCode);
 }
