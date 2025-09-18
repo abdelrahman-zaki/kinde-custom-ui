@@ -36,25 +36,28 @@ export const workflowSettings: WorkflowSettings = {
 
 // The workflow code to be executed when the event is triggered
 export default async function Workflow(event: onUserTokenGeneratedEvent) {
-    const kindeAPI = await createKindeAPI(event);
-
-    console.log(event.context.organization);
-
-    const orgCode = event.context.organization.code;
-    const { data: orgDetails } = await kindeAPI.get({
-        endpoint: `organization?code=${orgCode}`,
-    });
-
-    const userId = event.context.user.id;
-    const { data: rolesDetails } = await kindeAPI.get({
-        endpoint: `organizations/${orgCode}/users/${userId}/roles`,
-    });
-
     const idToken = idTokenCustomClaims<{
         roles: { id: string; key: string }[] | null;
-        org_name: string;
+        org_name: string | null;
     }>();
 
-    idToken.roles = rolesDetails.roles;
-    idToken.org_name = orgDetails.name;
+    idToken.roles = null;
+    idToken.org_name = null;
+
+    const kindeAPI = await createKindeAPI(event);
+
+    const orgCode = event.context.organization.code;
+    if (orgCode) {
+        const { data: orgDetails } = await kindeAPI.get({
+            endpoint: `organization?code=${orgCode}`,
+        });
+
+        const userId = event.context.user.id;
+        const { data: rolesDetails } = await kindeAPI.get({
+            endpoint: `organizations/${orgCode}/users/${userId}/roles`,
+        });
+
+        idToken.roles = rolesDetails.roles;
+        idToken.org_name = orgDetails.name;
+    }
 }
