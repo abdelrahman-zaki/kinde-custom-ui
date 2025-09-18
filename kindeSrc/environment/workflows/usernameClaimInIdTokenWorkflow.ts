@@ -38,6 +38,8 @@ export const workflowSettings: WorkflowSettings = {
 export default async function Workflow(event: onUserTokenGeneratedEvent) {
     const kindeAPI = await createKindeAPI(event);
 
+    console.log(event.context.organization);
+
     const orgCode = event.context.organization.code;
     const { data: orgDetails } = await kindeAPI.get({
         endpoint: `organization?code=${orgCode}`,
