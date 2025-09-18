@@ -28,6 +28,7 @@ export const workflowSettings: WorkflowSettings = {
         action: "stop",
     },
     bindings: {
+        "kinde.env": {},     // for env variables
         "kinde.idToken": {}, // required to modify id token claims
         url: {}, // required for url params
     },
