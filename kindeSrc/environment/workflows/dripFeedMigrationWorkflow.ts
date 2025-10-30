@@ -67,6 +67,8 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
             body: payload
         });
 
+        console.log('payload: ', payload);
+
         if (!userData) {
             // If the email/password is not verified in the external system, you can invalidate the form field
             invalidateFormField('p_password', 'Email or password not found');
