@@ -57,6 +57,7 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
         };
 
         console.log(`Looking up user by email at ${CHECK_PASSWORD_API_URL}`);
+        console.log('payload: ', payload);
 
         const { data: userData } = await secureFetch<{ data: UserDataResponse }>(CHECK_PASSWORD_API_URL, {
             method: 'POST',
@@ -66,8 +67,6 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
             },
             body: payload
         });
-
-        console.log('payload: ', payload);
 
         if (!userData) {
             // If the email/password is not verified in the external system, you can invalidate the form field
