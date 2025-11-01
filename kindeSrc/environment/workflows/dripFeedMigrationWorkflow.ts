@@ -65,7 +65,7 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
             headers: {
                 'content-type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: payload
         });
 
         if (!userData) {
