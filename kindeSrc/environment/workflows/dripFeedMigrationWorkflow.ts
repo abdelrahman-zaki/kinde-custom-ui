@@ -119,7 +119,8 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
         });
 
         console.log(pwdRes.message);
-    } catch (error) {
-        console.error('error', error);
+    } catch (err: any) {
+        const safeErr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+        console.error('secureFetch/create user failed:', safeErr);
     }
 }
