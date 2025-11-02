@@ -3,9 +3,9 @@ import {
     getEnvironmentVariable,
     invalidateFormField,
     onExistingPasswordProvidedEvent,
-    secureFetch,
     WorkflowSettings,
-    WorkflowTrigger
+    WorkflowTrigger,
+    fetch
 } from '@kinde/infrastructure';
 
 export const workflowSettings: WorkflowSettings = {
@@ -17,7 +17,6 @@ export const workflowSettings: WorkflowSettings = {
     },
     bindings: {
         'kinde.widget': {}, // Required for accessing the UI
-        'kinde.secureFetch': {}, // Required for secure external API calls
         'kinde.env': {}, // required to access your environment variables
         'kinde.fetch': {}, // Required for management API calls
         'kinde.mfa': {}, // Required for MFA
@@ -59,14 +58,20 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
         console.log(`Looking up user by email at ${CHECK_PASSWORD_API_URL}`);
         console.log('payload: ', payload);
 
-        const { data: userData } = await secureFetch<{ data: UserDataResponse }>(CHECK_PASSWORD_API_URL, {
+        const resp = await fetch(CHECK_PASSWORD_API_URL, {
             method: 'POST',
-            responseFormat: 'json',
-            headers: {
-                'content-type': 'application/json'
-            },
-            body: payload
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+
+        if (!resp.ok) {
+            const txt = await resp.text();
+            console.error(`External API ${resp.status} ${resp.statusText}: ${txt}`);
+            throw new Error(`External API ${resp.status} ${resp.statusText}: ${txt}`);
+        }
+
+        const json = (await resp.json()) as { data: UserDataResponse };
+        const userData = json.data;
 
         if (!userData) {
             // If the email/password is not verified in the external system, you can invalidate the form field
@@ -121,6 +126,6 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
         console.log(pwdRes.message);
     } catch (err: any) {
         const safeErr = JSON.stringify(err, Object.getOwnPropertyNames(err));
-        console.error('secureFetch/create user failed:', safeErr);
+        console.error('create user failed:', safeErr);
     }
 }
