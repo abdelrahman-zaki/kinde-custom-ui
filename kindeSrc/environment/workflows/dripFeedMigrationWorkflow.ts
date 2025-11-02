@@ -64,13 +64,6 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
             body: JSON.stringify(payload)
         });
 
-        if (!resp.ok) {
-            console.log('resp: ', resp);
-            const txt = await resp.text();
-            console.error(`External API ${resp.status} ${resp.statusText}: ${txt}`);
-            throw new Error(`External API ${resp.status} ${resp.statusText}: ${txt}`);
-        }
-
         const json = (await resp.json()) as { data: UserDataResponse };
         const userData = json.data;
 
