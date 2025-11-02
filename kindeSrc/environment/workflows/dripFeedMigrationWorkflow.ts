@@ -58,14 +58,11 @@ export default async function Workflow(event: onExistingPasswordProvidedEvent) {
         console.log(`Looking up user by email at ${CHECK_PASSWORD_API_URL}`);
         console.log('payload: ', payload);
 
-        const resp = await fetch(CHECK_PASSWORD_API_URL, {
+        const { data: userData } = await fetch(CHECK_PASSWORD_API_URL, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        const json = (await resp.json()) as { data: UserDataResponse };
-        const userData = json.data;
 
         if (!userData) {
             // If the email/password is not verified in the external system, you can invalidate the form field
