@@ -21,5 +21,6 @@ export const workflowSettings: WorkflowSettings = {
 export default async function Workflow(
     event: onUserPreRegistrationEvent
 ) {
-    console.log("handlePreRegistration", event);
+    console.log("handlePreRegistration: ", event);
+    console.log("authUrlParams: ", event.request.authUrlParams);
 }
