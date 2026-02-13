@@ -42,7 +42,7 @@ export default async function Workflow(event: onUserTokenGeneratedEvent) {
         org_name: string | null;
     }>();
 
-    console.log(event);
+    idToken.given_name = "set given_name"
 
     idToken.roles = null;
     idToken.org_name = null;
