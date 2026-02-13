@@ -37,9 +37,12 @@ export const workflowSettings: WorkflowSettings = {
 // The workflow code to be executed when the event is triggered
 export default async function Workflow(event: onUserTokenGeneratedEvent) {
     const idToken = idTokenCustomClaims<{
+        given_name: string | null;
         roles: { id: string; key: string }[] | null;
         org_name: string | null;
     }>();
+
+    console.log(idToken.given_name);
 
     idToken.roles = null;
     idToken.org_name = null;
