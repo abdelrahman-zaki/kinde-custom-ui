@@ -51,9 +51,6 @@ export const workflowSettings: WorkflowSettings = {
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     console.log(event);
 
-    const protocol = event.context?.auth?.provider?.protocol;
-    if (!protocol || protocol !== "saml") return;
-
     const kindeAPI = await createKindeAPI(event);
     const userId = event.context.user.id;
 
