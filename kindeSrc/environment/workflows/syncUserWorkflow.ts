@@ -48,83 +48,19 @@ export const workflowSettings: WorkflowSettings = {
     },
 };
 
-type SamlValue = { value?: string };
-type SamlAttribute = { name?: string; values?: SamlValue[] };
-type SamlAttributeStatement = { attributes?: SamlAttribute[] };
-
-const attributeSyncConfig = [
-    {
-        samlNames: ["phone_number", "phone", "mobilephone"],
-        kindeKey: "phone_number",
-        multiValue: false,
-    },
-    {
-        samlNames: ["user_type", "usertype"],
-        kindeKey: "user_type",
-        multiValue: false,
-    },
-    {
-        samlNames: ["groups", "group"],
-        kindeKey: "groups",
-        multiValue: true,
-    },
-];
-
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     console.log(event);
-    console.log("authUrlParams: ", event.request.authUrlParams);
 
     const protocol = event.context?.auth?.provider?.protocol;
     if (!protocol || protocol !== "saml") return;
 
-    const attributeStatements =
-        event.context.auth.provider?.data?.assertion
-            ?.attributeStatements as SamlAttributeStatement[] | undefined;
-    if (!attributeStatements?.length) return;
-
-    const samlAttributesMap = (attributeStatements ?? [])
-        .flatMap((statement) => statement.attributes ?? [])
-        .reduce((acc, attr) => {
-            const name = attr.name?.toLowerCase().trim();
-            if (name) {
-                const values = (attr.values ?? [])
-                    .map((v) => v.value?.trim())
-                    .filter((v): v is string => !!v);
-                if (values.length > 0) {
-                    acc.set(name, values);
-                }
-            }
-            return acc;
-        }, new Map<string, string[]>());
-
-    const propertiesToUpdate: Record<string, string> = {};
-
-    for (const config of attributeSyncConfig) {
-        let foundValues: string[] | undefined;
-        for (const name of config.samlNames) {
-            const values = samlAttributesMap.get(name);
-            if (values && values.length > 0) {
-                foundValues = values;
-                break;
-            }
-        }
-
-        if (foundValues) {
-            if (config.multiValue) {
-                propertiesToUpdate[config.kindeKey] = foundValues.join(",");
-            } else {
-                propertiesToUpdate[config.kindeKey] = foundValues[0];
-            }
-        }
-    }
-
-    if (Object.keys(propertiesToUpdate).length === 0) return;
-
     const kindeAPI = await createKindeAPI(event);
     const userId = event.context.user.id;
 
-    await kindeAPI.patch({
-        endpoint: `users/${userId}/properties`,
-        params: { properties: propertiesToUpdate },
+    const { data } = await kindeAPI.get({
+        endpoint: `user?id=${userId}&expand=organizations`,
     });
+
+    console.log("authUrlParams: ", event.request.authUrlParams.orgCode);
+    console.log(data);
 }
