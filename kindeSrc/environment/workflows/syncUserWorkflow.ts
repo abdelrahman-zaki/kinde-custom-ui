@@ -35,20 +35,24 @@ import {
 // Once configured, this workflow will run after authentication, read the attributes from the SAML assertion,
 // and sync them into Kinde so they can be used in tokens or elsewhere.
 
-const decodeKindeState = (state?: string): any | null => {
+const decodeKindeState = (state?: string) => {
   if (!state) return null;
 
-  // In case the query param is URL-encoded
-  const raw = decodeURIComponent(state);
+  // state can be URL-encoded
+  let s = decodeURIComponent(state);
 
   // base64url -> base64
-  let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
 
-  // add padding back (=) if missing
-  const pad = b64.length % 4;
-  if (pad) b64 += "=".repeat(4 - pad);
+  // restore padding
+  s += "=".repeat((4 - (s.length % 4)) % 4);
 
-  const json = Buffer.from(b64, "base64").toString("utf8");
+  // base64 -> bytes
+  const binary = atob(s);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+
+  // bytes -> string -> JSON
+  const json = new TextDecoder().decode(bytes);
   return JSON.parse(json);
 }
 
