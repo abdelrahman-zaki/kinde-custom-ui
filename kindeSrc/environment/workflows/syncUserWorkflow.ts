@@ -35,6 +35,23 @@ import {
 // Once configured, this workflow will run after authentication, read the attributes from the SAML assertion,
 // and sync them into Kinde so they can be used in tokens or elsewhere.
 
+const decodeKindeState = (state?: string): any | null => {
+  if (!state) return null;
+
+  // In case the query param is URL-encoded
+  const raw = decodeURIComponent(state);
+
+  // base64url -> base64
+  let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+
+  // add padding back (=) if missing
+  const pad = b64.length % 4;
+  if (pad) b64 += "=".repeat(4 - pad);
+
+  const json = Buffer.from(b64, "base64").toString("utf8");
+  return JSON.parse(json);
+}
+
 export const workflowSettings: WorkflowSettings = {
     id: "postAuthentication",
     name: "SamlAttributesSync",
@@ -50,6 +67,9 @@ export const workflowSettings: WorkflowSettings = {
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     console.log(event);
+
+    const decoded = decodeKindeState(event.request.authUrlParams.state);
+    console.log("decoded state:", decoded);
 
     const kindeAPI = await createKindeAPI(event);
     const userId = event.context.user.id;
