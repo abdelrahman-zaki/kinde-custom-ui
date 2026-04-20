@@ -2,7 +2,6 @@ import {
     onPostAuthenticationEvent,
     WorkflowSettings,
     WorkflowTrigger,
-    createKindeAPI,
 } from "@kinde/infrastructure";
 
 // This workflow syncs user attributes and groups from a SAML assertion into Kinde custom user properties.
@@ -50,14 +49,4 @@ export const workflowSettings: WorkflowSettings = {
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     console.log(event);
-
-    const kindeAPI = await createKindeAPI(event);
-    const userId = event.context.user.id;
-
-    const { data } = await kindeAPI.get({
-        endpoint: `user?id=${userId}&expand=organizations`,
-    });
-
-    console.log("authUrlParams: ", event.request.authUrlParams.orgCode);
-    console.log(data);
 }
