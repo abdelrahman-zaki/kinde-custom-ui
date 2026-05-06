@@ -49,4 +49,5 @@ export const workflowSettings: WorkflowSettings = {
 
 export default async function handlePostAuth(event: onPostAuthenticationEvent) {
     console.log(event);
+    console.log(event.context.auth.provider?.data?.profile.preferredEmail);
 }
