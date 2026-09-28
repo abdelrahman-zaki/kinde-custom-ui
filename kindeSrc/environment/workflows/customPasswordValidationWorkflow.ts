@@ -19,5 +19,5 @@ import {
   
   // The workflow code to be executed when the event is triggered
   export default async function Workflow(event: onNewPasswordProvidedEvent) {
-    console.log(context.auth.Password);
+    console.log(event.context.auth.Password);
   }
