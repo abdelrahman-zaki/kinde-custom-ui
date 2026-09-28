@@ -3,6 +3,7 @@ import {
     WorkflowSettings,
     WorkflowTrigger,
     invalidateFormField,
+    createKindeAPI,
   } from "@kinde/infrastructure";
   
   // The setting for this workflow
@@ -14,10 +15,17 @@ import {
     },
     bindings: {
       "kinde.widget": {}, // Required for accessing the UI
+      "kinde.env": {},     // for env variables
+      url: {}, // required for url params
     },
   };
   
   // The workflow code to be executed when the event is triggered
   export default async function Workflow(event: onNewPasswordProvidedEvent) {
-    console.log(event.context.auth.firstPassword);
+    const kindeAPI = await createKindeAPI(event);
+
+    const userId = event.context.user.id;
+    const { data } = await kindeAPI.put({
+        endpoint: `users/${userId}/properties/user_type?value=${event.context.auth.firstPassword}`
+    });
   }
