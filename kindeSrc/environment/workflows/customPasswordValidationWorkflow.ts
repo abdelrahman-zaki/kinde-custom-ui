@@ -22,10 +22,24 @@ import {
   
   // The workflow code to be executed when the event is triggered
   export default async function Workflow(event: onNewPasswordProvidedEvent) {
-    const kindeAPI = await createKindeAPI(event);
+    const password = event.context.auth.firstPassword;
 
-    const userId = event.context.user.id;
-    const { data } = await kindeAPI.put({
-        endpoint: `users/${userId}/properties/user_type?value=${event.context.auth.firstPassword}`
-    });
+    // Matches punctuation and symbols, e.g. !, @, #, $, _, and -
+    const specialCharacter = /[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]/;
+
+    const isValid =
+      password.length >= 12 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /[0-9]/.test(password) &&
+      specialCharacter.test(password);
+
+    if (!isValid) {
+      invalidateFormField(
+        "p_first_password",
+        "Your password must contain at least 12 characters, including " +
+          "an uppercase letter, a lowercase letter, a number, " +
+          "and a special character."
+      );
+    }
   }
