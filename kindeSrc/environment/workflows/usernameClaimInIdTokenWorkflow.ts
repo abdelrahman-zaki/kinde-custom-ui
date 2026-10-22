@@ -45,6 +45,7 @@ export default async function Workflow(event: onUserTokenGeneratedEvent) {
     // Fresh authentication sets the deadline. Only refresh requests enforce it.
     // Existing-session authorization returns before any Management API call.
     if (!isFreshAuthentication && auth.origin !== "refresh_token_request") {
+      console.log("Not a fresh authentication or refresh token request. Returning.");
       return;
     }
 
@@ -80,12 +81,14 @@ export default async function Workflow(event: onUserTokenGeneratedEvent) {
   
     if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
       denyAccess("Fresh authentication is required. Please sign in again.");
+      console.log("Not a fresh authentication. Returning.");
       return;
     }
   
     // Read the clock after the API call, including at the exact boundary.
     if (Date.now() >= expiresAt) {
       denyAccess("Your session has expired. Please sign in again.");
+      console.log("Session has expired. Returning.");
       return;
     }
 }
