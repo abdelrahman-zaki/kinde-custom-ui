@@ -7,7 +7,7 @@ import {
   } from "@kinde/infrastructure";
   
   const PROPERTY_KEY = "absolute_refresh_expires_at";
-  const ABSOLUTE_LIFETIME_MS = 1000;
+  const ABSOLUTE_LIFETIME_MS = 180;
   
   export const workflowSettings: WorkflowSettings = {
     id: "absoluteRefreshLifetime",
