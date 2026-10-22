@@ -1,45 +1,85 @@
 import {
-    onNewPasswordProvidedEvent,
-    WorkflowSettings,
-    WorkflowTrigger,
-    invalidateFormField,
-    createKindeAPI,
-  } from "@kinde/infrastructure";
-  
-  // The setting for this workflow
-  export const workflowSettings: WorkflowSettings = {
-    id: "onNewPasswordProvided",
-    trigger: WorkflowTrigger.NewPasswordProvided,
-    failurePolicy: {
-      action: "stop",
-    },
-    bindings: {
-      "kinde.widget": {}, // Required for accessing the UI
-      "kinde.env": {},     // for env variables
-      url: {}, // required for url params
-    },
-  };
-  
-  // The workflow code to be executed when the event is triggered
-  export default async function Workflow(event: onNewPasswordProvidedEvent) {
-    const password = event.context.auth.firstPassword;
+  createKindeAPI,
+  denyAccess,
+  WorkflowTrigger,
+  type WorkflowSettings,
+  type onUserTokenGeneratedEvent,
+} from "@kinde/infrastructure";
 
-    // Matches punctuation and symbols, e.g. !, @, #, $, _, and -
-    const specialCharacter = /[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]/;
+const PROPERTY_KEY = "absolute_refresh_expires_at";
+const ABSOLUTE_LIFETIME_MS = 1000;
 
-    const isValid =
-      password.length >= 12 &&
-      /[A-Z]/.test(password) &&
-      /[a-z]/.test(password) &&
-      /[0-9]/.test(password) &&
-      specialCharacter.test(password);
+export const workflowSettings: WorkflowSettings = {
+  id: "absoluteRefreshLifetime",
+  name: "Enforce a user-level absolute refresh deadline",
+  trigger: WorkflowTrigger.UserTokenGeneration,
+  failurePolicy: { action: "stop" },
+  bindings: {
+    "kinde.auth": {},
+    "kinde.env": {},
+    "kinde.fetch": {},
+    url: {},
+  },
+};
 
-    if (!isValid) {
-      invalidateFormField(
-        "p_first_password",
-        "Your password must contain at least 12 characters, including " +
-          "an uppercase letter, a lowercase letter, a number, " +
-          "and a special character."
-      );
-    }
+type UserProperty = { key: string; value: unknown };
+
+export default async function Workflow(event: onUserTokenGeneratedEvent) {
+  const userId = event.context?.user?.id;
+  const auth = event.context?.auth;
+
+  if (
+    !userId ||
+    !auth ||
+    typeof auth.isExistingSession !== "boolean" ||
+    (auth.origin !== "authorization_request" &&
+      auth.origin !== "refresh_token_request")
+  ) {
+    throw new Error("Missing or unsupported authentication context.");
   }
+
+  const kindeAPI = await createKindeAPI(event);
+  const endpoint = `users/${encodeURIComponent(userId)}/properties`;
+
+  const isFreshAuthentication =
+    auth.origin === "authorization_request" &&
+    auth.isExistingSession === false;
+
+  if (isFreshAuthentication) {
+    const expiresAt = String(Date.now() + ABSOLUTE_LIFETIME_MS);
+    const { data } = await kindeAPI.put({
+      endpoint:
+        `${endpoint}/${encodeURIComponent(PROPERTY_KEY)}` +
+        `?value=${encodeURIComponent(expiresAt)}`,
+    });
+
+    // createKindeAPI returns the response body. Check API-level success too.
+    if (data?.code !== "OK") {
+      throw new Error("Unable to save the absolute refresh deadline.");
+    }
+    return;
+  }
+
+  // Refresh and SSO reuse must preserve the stored deadline.
+  const { data } = await kindeAPI.get({ endpoint });
+  if (data?.code !== "OK" || !Array.isArray(data.properties)) {
+    throw new Error("Unable to read the absolute refresh deadline.");
+  }
+
+  const raw = (data.properties as UserProperty[]).find(
+    (property) => property?.key === PROPERTY_KEY,
+  )?.value;
+  const expiresAt =
+    typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : NaN;
+
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
+    denyAccess("Fresh authentication is required. Please sign in again.");
+    return;
+  }
+
+  // Read the clock after the API call, including at the exact boundary.
+  if (Date.now() >= expiresAt) {
+    denyAccess("Your session has expired. Please sign in again.");
+    return;
+  }
+}
