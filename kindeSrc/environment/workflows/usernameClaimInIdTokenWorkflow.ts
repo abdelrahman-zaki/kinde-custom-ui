@@ -55,7 +55,7 @@ import {
   
       // createKindeAPI returns the response body. Check API-level success too.
       if (data?.code !== "OK") {
-        throw new Error("Unable to save the absolute refresh deadline: " + data);
+        throw new Error("Unable to save the absolute refresh deadline: " + JSON.stringify(data));
       }
       return;
     }
