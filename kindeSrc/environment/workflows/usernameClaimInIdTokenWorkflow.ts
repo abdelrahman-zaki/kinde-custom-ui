@@ -1,63 +1,86 @@
 import {
-    onUserTokenGeneratedEvent,
-    WorkflowSettings,
-    WorkflowTrigger,
     createKindeAPI,
-    idTokenCustomClaims,
-} from "@kinde/infrastructure";
-
-// This workflow requires you to set up the Kinde management API
-// You can do this by going to the Kinde dashboard.
-//
-// Create an M2M application with the following scopes enabled:
-// * read:organizations
-// * read:organization_user_roles
-//
-// In Settings -> Environment variables set up the following variables with the
-// values from the M2M application you created above:
-//
-// * KINDE_WF_M2M_CLIENT_ID
-// * KINDE_WF_M2M_CLIENT_SECRET - Ensure this is setup with sensitive flag
-// enabled to prevent accidental sharing
-
-// The setting for this workflow
-export const workflowSettings: WorkflowSettings = {
-    id: "onUserTokenGeneration",
+    denyAccess,
+    WorkflowTrigger,
+    type WorkflowSettings,
+    type onUserTokenGeneratedEvent,
+  } from "@kinde/infrastructure";
+  
+  const PROPERTY_KEY = "absolute_refresh_expires_at";
+  const ABSOLUTE_LIFETIME_MS = 1000;
+  
+  export const workflowSettings: WorkflowSettings = {
+    id: "absoluteRefreshLifetime",
+    name: "Enforce a user-level absolute refresh deadline",
     trigger: WorkflowTrigger.UserTokenGeneration,
-    failurePolicy: {
-        action: "stop",
-    },
+    failurePolicy: { action: "stop" },
     bindings: {
-        "kinde.env": {},     // for env variables
-        "kinde.idToken": {}, // required to modify id token claims
-        url: {}, // required for url params
+      "kinde.auth": {},
+      "kinde.env": {},
+      "kinde.fetch": {},
+      url: {},
     },
-};
-
-// The workflow code to be executed when the event is triggered
-export default async function Workflow(event: onUserTokenGeneratedEvent) {
-    const idToken = idTokenCustomClaims<{
-        roles: { id: string; key: string }[] | null;
-        org_name: string | null;
-    }>();
-
-    idToken.roles = null;
-    idToken.org_name = null;
-
-    const kindeAPI = await createKindeAPI(event);
-
-    const orgCode = event.context.organization.code;
-    if (orgCode) {
-        const { data: orgDetails } = await kindeAPI.get({
-            endpoint: `organization?code=${orgCode}`,
-        });
-
-        const userId = event.context.user.id;
-        const { data: rolesDetails } = await kindeAPI.get({
-            endpoint: `organizations/${orgCode}/users/${userId}/roles`,
-        });
-
-        idToken.roles = rolesDetails.roles;
-        idToken.org_name = orgDetails.name;
+  };
+  
+  type UserProperty = { key: string; value: unknown };
+  
+  export default async function Workflow(event: onUserTokenGeneratedEvent) {
+    const userId = event.context?.user?.id;
+    const auth = event.context?.auth;
+  
+    if (
+      !userId ||
+      !auth ||
+      typeof auth.isExistingSession !== "boolean" ||
+      (auth.origin !== "authorization_request" &&
+        auth.origin !== "refresh_token_request")
+    ) {
+      throw new Error("Missing or unsupported authentication context.");
     }
-}
+  
+    const kindeAPI = await createKindeAPI(event);
+    const endpoint = `users/${encodeURIComponent(userId)}/properties`;
+  
+    const isFreshAuthentication =
+      auth.origin === "authorization_request" &&
+      auth.isExistingSession === false;
+  
+    if (isFreshAuthentication) {
+      const expiresAt = String(Date.now() + ABSOLUTE_LIFETIME_MS);
+      const { data } = await kindeAPI.put({
+        endpoint:
+          `${endpoint}/${encodeURIComponent(PROPERTY_KEY)}` +
+          `?value=${encodeURIComponent(expiresAt)}`,
+      });
+  
+      // createKindeAPI returns the response body. Check API-level success too.
+      if (data?.code !== "OK") {
+        throw new Error("Unable to save the absolute refresh deadline.");
+      }
+      return;
+    }
+  
+    // Refresh and SSO reuse must preserve the stored deadline.
+    const { data } = await kindeAPI.get({ endpoint });
+    if (data?.code !== "OK" || !Array.isArray(data.properties)) {
+      throw new Error("Unable to read the absolute refresh deadline.");
+    }
+  
+    const raw = (data.properties as UserProperty[]).find(
+      (property) => property?.key === PROPERTY_KEY,
+    )?.value;
+    const expiresAt =
+      typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : NaN;
+  
+    if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
+      denyAccess("Fresh authentication is required. Please sign in again.");
+      return;
+    }
+  
+    // Read the clock after the API call, including at the exact boundary.
+    if (Date.now() >= expiresAt) {
+      denyAccess("Your session has expired. Please sign in again.");
+      return;
+    }
+  }
+  
