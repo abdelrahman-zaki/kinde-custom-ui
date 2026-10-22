@@ -4,12 +4,12 @@ import {
     WorkflowTrigger,
     type WorkflowSettings,
     type onUserTokenGeneratedEvent,
-  } from "@kinde/infrastructure";
+} from "@kinde/infrastructure";
   
-  const PROPERTY_KEY = "absolute_refresh_expires_at";
-  const ABSOLUTE_LIFETIME_MS = 180;
+const PROPERTY_KEY = "absolute_refresh_expires_at";
+const ABSOLUTE_LIFETIME_MS = 180 * 1000;
   
-  export const workflowSettings: WorkflowSettings = {
+export const workflowSettings: WorkflowSettings = {
     id: "absoluteRefreshLifetime",
     name: "Enforce a user-level absolute refresh deadline",
     trigger: WorkflowTrigger.UserTokenGeneration,
@@ -20,11 +20,11 @@ import {
       "kinde.fetch": {},
       url: {},
     },
-  };
+};
   
-  type UserProperty = { key: string; value: unknown };
-  
-  export default async function Workflow(event: onUserTokenGeneratedEvent) {
+type UserProperty = { key: string; value: unknown };
+
+export default async function Workflow(event: onUserTokenGeneratedEvent) {
     const userId = event.context?.user?.id;
     const auth = event.context?.auth;
   
@@ -37,13 +37,19 @@ import {
     ) {
       throw new Error("Missing or unsupported authentication context.");
     }
-  
-    const kindeAPI = await createKindeAPI(event);
-    const endpoint = `users/${encodeURIComponent(userId)}/properties`;
-  
+
     const isFreshAuthentication =
       auth.origin === "authorization_request" &&
       auth.isExistingSession === false;
+  
+    // Fresh authentication sets the deadline. Only refresh requests enforce it.
+    // Existing-session authorization returns before any Management API call.
+    if (!isFreshAuthentication && auth.origin !== "refresh_token_request") {
+      return;
+    }
+
+    const kindeAPI = await createKindeAPI(event);
+    const endpoint = `users/${encodeURIComponent(userId)}/properties`;
   
     if (isFreshAuthentication) {
       const expiresAt = String(Date.now() + ABSOLUTE_LIFETIME_MS);
@@ -60,7 +66,7 @@ import {
       return;
     }
   
-    // Refresh and SSO reuse must preserve the stored deadline.
+    // Only refresh_token_request reaches this check. Never extend its deadline.
     const { data } = await kindeAPI.get({ endpoint });
     if (data?.code !== "OK" || !Array.isArray(data.properties)) {
       throw new Error("Unable to read the absolute refresh deadline.");
@@ -82,5 +88,4 @@ import {
       denyAccess("Your session has expired. Please sign in again.");
       return;
     }
-  }
-  
+}
