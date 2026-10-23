@@ -8,7 +8,7 @@ import {
   
 const PROPERTY_KEY = "absolute_refresh_expires_at";
 const ABSOLUTE_LIFETIME_MS = 180 * 1000;
-  
+
 export const workflowSettings: WorkflowSettings = {
     id: "absoluteRefreshLifetime",
     name: "Enforce a user-level absolute refresh deadline",
@@ -21,12 +21,14 @@ export const workflowSettings: WorkflowSettings = {
       url: {},
     },
 };
-  
+
 type UserProperty = { key: string; value: unknown };
 
 export default async function Workflow(event: onUserTokenGeneratedEvent) {
     const userId = event.context?.user?.id;
     const auth = event.context?.auth;
+
+    console.log("auth.origin: ", auth.origin);
   
     if (
       !userId ||
